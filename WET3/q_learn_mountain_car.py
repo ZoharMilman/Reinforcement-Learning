@@ -9,8 +9,7 @@ import matplotlib.pyplot as plt
 
 
 def save_frames_as_gif(frames, path='./', filename='gym_animation.gif'):
-
-    #Mess with this to change frame size
+    # Mess with this to change frame size
     plt.figure(figsize=(frames[0].shape[1] / 72.0, frames[0].shape[0] / 72.0), dpi=72)
 
     patch = plt.imshow(frames[0])
@@ -19,8 +18,9 @@ def save_frames_as_gif(frames, path='./', filename='gym_animation.gif'):
     def animate(i):
         patch.set_data(frames[i])
 
-    anim = animation.FuncAnimation(plt.gcf(), animate, frames = len(frames), interval=50)
+    anim = animation.FuncAnimation(plt.gcf(), animate, frames=len(frames), interval=50)
     anim.save(path + filename, writer='imagemagick', fps=60)
+
 
 class Solver:
     def __init__(self, number_of_kernels_per_dim, number_of_actions, gamma, learning_rate):
@@ -28,7 +28,7 @@ class Solver:
         self._max_normal = 1
         # get state \action information
         self.data_transformer = DataTransformer()
-        state_mean = [-3.00283763e-01,  5.61618575e-05]
+        state_mean = [-3.00283763e-01, 5.61618575e-05]
         state_std = [0.51981243, 0.04024895]
         self.data_transformer.set(state_mean, state_std)
         self._actions = number_of_actions
@@ -50,7 +50,7 @@ class Solver:
         return features
 
     def get_q_val(self, features, action):
-        theta_ = self.theta[action*self.number_of_features: (1 + action)*self.number_of_features]
+        theta_ = self.theta[action * self.number_of_features: (1 + action) * self.number_of_features]
         return np.dot(features, theta_)
 
     def get_all_q_vals(self, features):
@@ -137,18 +137,128 @@ def run_episode(env, solver, is_train=True, epsilon=None, max_steps=200, render=
 
         state = next_state
 
+
+# if __name__ == "__main__":
+#     env = MountainCarWithResetEnv()
+#     seeds = [123, 234, 345]
+#     # seed = 234
+#     # seeds = [345]
+#
+#     for seed in seeds:
+#         np.random.seed(seed)
+#         env.seed(seed)
+#
+#         gamma = 0.99
+#         learning_rate = 0.01
+#         epsilon_current = 0.1
+#         epsilon_decrease = 1.
+#         epsilon_min = 0.05
+#
+#         max_episodes = 10000
+#
+#         rewards = np.zeros(max_episodes)
+#         success_rates = np.zeros(max_episodes)
+#         state_values = np.zeros(max_episodes)
+#         avg_errors = np.zeros(int(max_episodes / 100))
+#         error_window = np.zeros(100)
+#
+#         solver = Solver(
+#             # learning parameters
+#             gamma=gamma, learning_rate=learning_rate,
+#             # feature extraction parameters
+#             number_of_kernels_per_dim=[7, 5],
+#             # env dependencies (DO NOT CHANGE):
+#             number_of_actions=env.action_space.n,
+#         )
+#
+#         for episode_index in range(1, max_episodes + 1):
+#
+#             episode_gain, mean_delta = run_episode(env, solver, is_train=True, epsilon=epsilon_current)
+#             error_window[episode_index % 100 - 1] = mean_delta
+#             rewards[episode_index - 1] = episode_gain
+#             state_features = solver.get_features([-0.5, 0.])
+#             state_values[episode_index - 1] = np.mean(solver.get_all_q_vals(state_features))
+#
+#             # reduce epsilon if required
+#             epsilon_current *= epsilon_decrease
+#             epsilon_current = max(epsilon_current, epsilon_min)
+#
+#             print(
+#                 f'after {episode_index}, reward = {episode_gain}, epsilon {epsilon_current}, average error {mean_delta}')
+#
+#             if episode_index % 100 == 99:
+#                 avg_errors[int((episode_index + 1) / 100) - 1] = np.mean(error_window)
+#                 error_window = np.zeros(100)
+#
+#             # termination condition:
+#             if episode_index % 10 == 9:
+#                 test_gains = [run_episode(env, solver, is_train=False, epsilon=0.)[0] for _ in range(10)]
+#                 num_of_success = len([x for x in test_gains if x >= -75])
+#                 success_rate = num_of_success / 10
+#                 success_rates[episode_index - 1] = success_rate
+#                 mean_test_gain = np.mean(test_gains)
+#                 print(f'tested 10 episodes: mean gain is {mean_test_gain}')
+#                 if mean_test_gain >= -75.:
+#                     print(f'solved in {episode_index} episodes')
+#                     break
+#
+#         # Trim the errors
+#         rewards = np.trim_zeros(rewards)
+#         success_rates = np.trim_zeros(success_rates, 'b')
+#         state_values = np.trim_zeros(state_values)
+#         avg_errors = np.trim_zeros(avg_errors)
+#
+#         # Create subplots
+#         fig, axs = plt.subplots(2, 2, figsize=(14, 14))
+#
+#         # Plot 1: Total reward in the training episode vs. training episodes
+#         axs[0, 0].plot(range(1, len(rewards) + 1), rewards)
+#         axs[0, 0].set_xlabel('Training Episodes')
+#         axs[0, 0].set_ylabel('Total Reward')
+#         # axs[0, 0].set_title('Total Reward vs. Training Episodes For Seed: ' + str(seed) + ' Epsilon: ' + str(epsilon_current) + 'Gamma: ' + str(gamma) + 'Alpha: ' + str(learning_rate))
+#
+#         # Plot 2: Performance vs. training episodes
+#         axs[0, 1].plot(range(1, len(success_rates) + 1), success_rates)
+#         axs[0, 1].set_xlabel('Training Episodes')
+#         axs[0, 1].set_ylabel('Performance')
+#         # axs[0, 1].set_title('Performance vs. Training Episodes For Seed: ' + str(seed) + ' Epsilon: ' + str(epsilon_current) + 'Gamma: ' + str(gamma) + 'Alpha: ' + str(learning_rate))
+#
+#         # Plot 3: Approximate value of the state at the bottom of the hill vs. training episodes
+#         axs[1, 0].plot(range(1, len(state_values) + 1), state_values)
+#         axs[1, 0].set_xlabel('Training Episodes')
+#         axs[1, 0].set_ylabel('Approximate Value')
+#         # axs[1, 0].set_title('Approximate Value vs. Training Episodes For Seed: ' + str(seed) + ' Epsilon: ' + str(epsilon_current) + 'Gamma: ' + str(gamma) + 'Alpha: ' + str(learning_rate))
+#
+#         # Plot 4: Total Bellman error of the episode, averaged over most recent 100 episodes
+#         axs[1, 1].plot(range(len(avg_errors)), avg_errors)
+#         axs[1, 1].set_xlabel('Training Episodes/100')
+#         axs[1, 1].set_ylabel('Average Bellman Error')
+#         # axs[1, 1].set_title('Average Bellman Error vs. Training Episodes For Seed: ' + str(seed) + ' Epsilon: ' + str(epsilon_current) + 'Gamma: ' + str(gamma) + 'Alpha: ' + str(learning_rate))
+#
+#         # Adjust spacing between subplots
+#         plt.tight_layout()
+#
+#         # Display the plot
+#         # plt.show()
+#         plt.subplots_adjust(top=0.9, hspace=0.2)
+#         plt.suptitle('Seed: ' + str(seed) + ' Epsilon: ' + str(epsilon_current) + ' Gamma: ' + str(gamma) + ' Alpha: ' + str(learning_rate), fontsize=16, fontweight='bold')
+#         plt.savefig(str(seed) + '_results_' + 'epsilon=' + str(epsilon_current) + 'alpha=' + str(learning_rate) + 'gamma=' + str(gamma) + '.png')
+#
+#         # _, _, frames = run_episode(env, solver, is_train=False, render=True)
+#         # save_frames_as_gif(frames, filename=(str(seed) + 'epsilon=' + str(epsilon_current) + 'alpha=' + str(learning_rate) + '.gif'))
+
 if __name__ == "__main__":
     env = MountainCarWithResetEnv()
     seeds = [123, 234, 345]
     # seed = 234
-    # seed = 345
+    # seeds = [345]
 
     for seed in seeds:
         np.random.seed(seed)
         env.seed(seed)
 
-        gamma = 0.99
-        learning_rate = 0.01
+        gamma = 0.999
+        learning_rate = 0.05
         epsilon_current = 0.1
         epsilon_decrease = 1.
         epsilon_min = 0.05
@@ -158,7 +268,7 @@ if __name__ == "__main__":
         rewards = np.zeros(max_episodes)
         success_rates = np.zeros(max_episodes)
         state_values = np.zeros(max_episodes)
-        avg_errors = np.zeros(int(max_episodes/100))
+        avg_errors = np.zeros(int(max_episodes / 100))
         error_window = np.zeros(100)
 
         solver = Solver(
@@ -174,25 +284,26 @@ if __name__ == "__main__":
 
             episode_gain, mean_delta = run_episode(env, solver, is_train=True, epsilon=epsilon_current)
             error_window[episode_index % 100 - 1] = mean_delta
-            rewards[episode_index-1] = episode_gain
+            rewards[episode_index - 1] = episode_gain
             state_features = solver.get_features([-0.5, 0.])
-            state_values[episode_index-1] = np.mean(solver.get_all_q_vals(state_features))
+            state_values[episode_index - 1] = np.mean(solver.get_all_q_vals(state_features))
 
             # reduce epsilon if required
             epsilon_current *= epsilon_decrease
             epsilon_current = max(epsilon_current, epsilon_min)
 
-            print(f'after {episode_index}, reward = {episode_gain}, epsilon {epsilon_current}, average error {mean_delta}')
+            print(
+                f'after {episode_index}, reward = {episode_gain}, epsilon {epsilon_current}, average error {mean_delta}')
 
             if episode_index % 100 == 99:
-                avg_errors[int((episode_index+1)/100)-1] = np.mean(error_window)
+                avg_errors[int((episode_index + 1) / 100) - 1] = np.mean(error_window)
                 error_window = np.zeros(100)
 
             # termination condition:
             if episode_index % 10 == 9:
                 test_gains = [run_episode(env, solver, is_train=False, epsilon=0.)[0] for _ in range(10)]
-                num_of_success = np.count_nonzero(test_gains != -200)
-                success_rate = num_of_success/10
+                num_of_success = len([x for x in test_gains if x >= -75])
+                success_rate = num_of_success / 10
                 success_rates[episode_index - 1] = success_rate
                 mean_test_gain = np.mean(test_gains)
                 print(f'tested 10 episodes: mean gain is {mean_test_gain}')
@@ -200,56 +311,121 @@ if __name__ == "__main__":
                     print(f'solved in {episode_index} episodes')
                     break
 
-        import matplotlib.pyplot as plt
-
         # Trim the errors
         rewards = np.trim_zeros(rewards)
-        success_rates = np.trim_zeros(success_rates)
+        success_rates = np.trim_zeros(success_rates, 'b')
         state_values = np.trim_zeros(state_values)
         avg_errors = np.trim_zeros(avg_errors)
 
         # Create subplots
-        fig, axs = plt.subplots(2, 2, figsize=(12, 12))
+        fig, axs = plt.subplots(2, 2, figsize=(14, 14))
 
         # Plot 1: Total reward in the training episode vs. training episodes
         axs[0, 0].plot(range(1, len(rewards) + 1), rewards)
         axs[0, 0].set_xlabel('Training Episodes')
         axs[0, 0].set_ylabel('Total Reward')
-        axs[0, 0].set_title('Total Reward vs. Training Episodes For Seed: ' + str(seed))
+        # axs[0, 0].set_title('Total Reward vs. Training Episodes For Seed: ' + str(seed) + ' Epsilon: ' + str(epsilon_current) + 'Gamma: ' + str(gamma) + 'Alpha: ' + str(learning_rate))
 
         # Plot 2: Performance vs. training episodes
         axs[0, 1].plot(range(1, len(success_rates) + 1), success_rates)
         axs[0, 1].set_xlabel('Training Episodes')
         axs[0, 1].set_ylabel('Performance')
-        axs[0, 1].set_title('Performance vs. Training Episodes For Seed ' + str(seed))
+        # axs[0, 1].set_title('Performance vs. Training Episodes For Seed: ' + str(seed) + ' Epsilon: ' + str(epsilon_current) + 'Gamma: ' + str(gamma) + 'Alpha: ' + str(learning_rate))
 
         # Plot 3: Approximate value of the state at the bottom of the hill vs. training episodes
         axs[1, 0].plot(range(1, len(state_values) + 1), state_values)
         axs[1, 0].set_xlabel('Training Episodes')
         axs[1, 0].set_ylabel('Approximate Value')
-        axs[1, 0].set_title('Approximate Value vs. Training Episodes For Seed' + str(seed))
+        # axs[1, 0].set_title('Approximate Value vs. Training Episodes For Seed: ' + str(seed) + ' Epsilon: ' + str(epsilon_current) + 'Gamma: ' + str(gamma) + 'Alpha: ' + str(learning_rate))
 
         # Plot 4: Total Bellman error of the episode, averaged over most recent 100 episodes
         axs[1, 1].plot(range(len(avg_errors)), avg_errors)
         axs[1, 1].set_xlabel('Training Episodes/100')
         axs[1, 1].set_ylabel('Average Bellman Error')
-        axs[1, 1].set_title('Average Bellman Error vs. Training Episodes For Seed=' + str(seed))
+        # axs[1, 1].set_title('Average Bellman Error vs. Training Episodes For Seed: ' + str(seed) + ' Epsilon: ' + str(epsilon_current) + 'Gamma: ' + str(gamma) + 'Alpha: ' + str(learning_rate))
 
         # Adjust spacing between subplots
         plt.tight_layout()
 
         # Display the plot
         # plt.show()
+        # Set spacing between subplots and title
+        plt.subplots_adjust(top=0.9, hspace=0.2)
 
-        plt.savefig(str(seed) + '_results')
+        # Add a big title above the subplots
+        plt.suptitle('Seed: ' + str(seed) + ' Epsilon: ' + str(epsilon_current) + ' Gamma: ' + str(gamma) + ' Alpha: ' + str(learning_rate), fontsize=16, fontweight='bold')
+        plt.savefig(str(seed) + '_results_' + 'epsilon=' + str(epsilon_current) + 'alpha=' + str(learning_rate) + 'gamma=' + str(gamma) + '.png')
 
-        _, _, frames = run_episode(env, solver, is_train=False, render=True)
-        save_frames_as_gif(frames, filename=(str(seed) + '.gif'))
+        # _, _, frames = run_episode(env, solver, is_train=False, render=True)
+        # save_frames_as_gif(frames, filename=(str(seed) + '_results_' + 'epsilon=' + str(epsilon_current) + 'alpha=' + str(learning_rate) + 'gamma=' + str(gamma) + '.gif'))
 
-
-
-
-
-
-
-
+# if __name__ == "__main__":
+#     env = MountainCarWithResetEnv()
+#     seeds = [123, 234, 345]
+#     # seed = 234
+#     # seeds = [345]
+#
+#     for seed in seeds:
+#         np.random.seed(seed)
+#         env.seed(seed)
+#
+#         gamma = 0.999
+#         learning_rate = 0.05
+#         epsilons = [1.0, 0.75, 0.5, 0.3, 0.01]
+#
+#         for epsilon_current in epsilons:
+#
+#             epsilon_decrease = 1.
+#             epsilon_min = 0.05
+#
+#             max_episodes = 10000
+#
+#             rewards = np.zeros(max_episodes)
+#
+#             solver = Solver(
+#                 # learning parameters
+#                 gamma=gamma, learning_rate=learning_rate,
+#                 # feature extraction parameters
+#                 number_of_kernels_per_dim=[7, 5],
+#                 # env dependencies (DO NOT CHANGE):
+#                 number_of_actions=env.action_space.n,
+#             )
+#
+#             for episode_index in range(1, max_episodes + 1):
+#
+#                 episode_gain, mean_delta = run_episode(env, solver, is_train=True, epsilon=epsilon_current)
+#                 rewards[episode_index - 1] = episode_gain
+#
+#                 # reduce epsilon if required
+#                 epsilon_current *= epsilon_decrease
+#                 epsilon_current = max(epsilon_current, epsilon_min)
+#
+#                 print(
+#                     f'after {episode_index}, reward = {episode_gain}, epsilon {epsilon_current}, average error {mean_delta}')
+#
+#                 if episode_index % 100 == 99:
+#                     error_window = np.zeros(100)
+#
+#                 # termination condition:
+#                 if episode_index % 10 == 9:
+#                     test_gains = [run_episode(env, solver, is_train=False, epsilon=0.)[0] for _ in range(10)]
+#                     mean_test_gain = np.mean(test_gains)
+#                     print(f'tested 10 episodes: mean gain is {mean_test_gain}')
+#                     if mean_test_gain >= -75.:
+#                         print(f'solved in {episode_index} episodes')
+#                         break
+#
+#             # Trim the errors
+#             rewards = np.trim_zeros(rewards)
+#
+#             # Plot 1: Total reward in the training episode vs. training episodes
+#             plt.figure(figsize=(12, 12))
+#             plt.plot(range(1, len(rewards) + 1), rewards)
+#             plt.xlabel('Training Episodes')
+#             plt.ylabel('Total Reward')
+#             plt.title('Seed: ' + str(seed) + ' Epsilon: ' + str(epsilon_current) + ' Gamma: ' + str(gamma) + ' Alpha: ' + str(learning_rate) + ' Avg Reward: ' + str(np.mean(rewards)))
+#
+#             plt.savefig(str(seed) + 'reward_results_' + 'epsilon=' + str(epsilon_current) + 'alpha=' + str(learning_rate) + 'gamma=' + str(gamma) + '.png')
+#
+#             # _, _, frames = run_episode(env, solver, is_train=False, render=True)
+#             # save_frames_as_gif(frames, filename=(str(seed) + '_results_' + 'epsilon=' + str(epsilon_current) + 'alpha=' + str(learning_rate) + 'gamma=' + str(gamma) + '.gif'))
